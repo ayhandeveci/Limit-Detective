@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Approach: Limit Radar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #050816;
+      --card: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.12);
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --success: #22c55e;
+      --error: #ef4444;
+      --border-soft: rgba(148,163,253,0.15);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --transition-fast: 0.2s ease;
+      --shadow-soft: 0 18px 40px rgba(15,23,42,0.7);
+      --font-main: system-ui, -apple-system, BlinkMacSystemFont, -system-ui,
+                   -apple-system, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-main);
+      background: radial-gradient(circle at top, #0f172a 0%, #020817 55%, #000 100%);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app {
+      width: min(1000px, 100vw - 24px);
+      margin: 18px auto 24px;
+      padding: 18px 18px 20px;
+      background: radial-gradient(circle at top left,
+                rgba(56,189,248,0.03),
+                rgba(15,23,42,0.96));
+      border-radius: 24px;
+      border: 1px solid var(--border-soft);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(18px);
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .logo-mark {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h1 span {
+      font-size: 11px;
+      font-weight: 400;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 2.3fr 1.4fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 768px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: radial-gradient(circle at top,
+                 rgba(148,163,253,0.06),
+                 rgba(9,9,11,0.98));
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-soft);
+      padding: 10px 10px 9px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: var(--accent);
+      letter-spacing: 0.16em;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .chip-soft {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(17,24,39,0.96);
+      border: 1px solid rgba(56,189,248,0.32);
+      font-size: 8px;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .canvas-wrap {
+      margin-top: 2px;
+      border-radius: var(--radius-md);
+      background: radial-gradient(circle at top,
+                  rgba(15,23,42,0.9),
+                  rgba(2,6,23,1));
+      padding: 4px;
+      border: 1px solid rgba(75,85,99,0.7);
+      box-shadow: inset 0 0 18px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    #graphCanvas {
+      width: 100%;
+      height: 260px;
+      background: transparent;
+      display: block;
+      border-radius: 12px;
+    }
+
+    .hint-row {
+      margin-top: 3px;
+      font-size: 9px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hint-pill {
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148,163,253,0.6);
+      font-size: 8px;
+      color: var(--muted);
+    }
+
+    .question-area {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: 100%;
+      justify-content: space-between;
+    }
+
+    .question-main {
+      margin-top: 2px;
+    }
+
+    .question-label {
+      font-size: 9px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 3px;
+    }
+
+    .function-label {
+      font-size: 11px;
+      color: #e5e7eb;
+      margin-bottom: 1px;
+    }
+
+    .limit-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #fefce8;
+    }
+
+    .target-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(24,24,27,1);
+      border: 1px solid rgba(63,63,70,0.9);
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .choice-btn {
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(75,85,99,0.85);
+      background: radial-gradient(circle at top left,
+                  rgba(15,23,42,0.98),
+                  rgba(9,9,11,1));
+      color: #e5e7eb;
+      font-size: 11px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      transition: all var(--transition-fast);
+    }
+
+    .choice-btn span.label {
+      flex: 1;
+    }
+
+    .choice-btn span.key {
+      font-size: 8px;
+      color: var(--muted);
+      opacity: 0.9;
+    }
+
+    .choice-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56,189,248,0.28);
+      transform: translateY(-1px);
+    }
+
+    .choice-btn.correct {
+      border-color: var(--success);
+      background: radial-gradient(circle at top left,
+                  rgba(22,163,74,0.12),
+                  rgba(9,9,11,1));
+    }
+
+    .choice-btn.wrong {
+      border-color: var(--error);
+      background: radial-gradient(circle at top left,
+                  rgba(239,68,68,0.16),
+                  rgba(9,9,11,1));
+    }
+
+    .feedback {
+      margin-top: 4px;
+      font-size: 10px;
+      line-height: 1.5;
+      min-height: 24px;
+    }
+
+    .feedback.ok {
+      color: var(--success);
+    }
+
+    .feedback.bad {
+      color: var(--error);
+    }
+
+    .explanation {
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .controls {
+      margin-top: 4px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 4px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(75,85,99,0.96);
+      background: rgba(9,9,11,0.98);
+      color: var(--muted);
+      font-size: 9px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px rgba(15,23,42,0.9);
+    }
+
+    .stats {
+      display: flex;
+      gap: 10px;
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 2px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stats span strong {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .tiny-note {
+      font-size: 8px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo-row">
+      <div class="logo-mark"></div>
+      <div>LambdaTechCo · Visual Learning Playground</div>
+    </div>
+    <h1>
+      Approach: Limit Radar
+      <span>Limit sezgisini oyunlaştır</span>
+    </h1>
+    <div class="subtitle">
+      Noktalar fonksiyona yaklaşırken izle, hisset, sonra tahmin et:
+      <strong>Limit, ulaşılan değil, yaklaşılan değerdir.</strong>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- SOL: Grafik -->
+    <section class="card">
+      <div class="card-label">
+        <div>Görsel Limit Simülatörü</div>
+        <div class="chip-soft">
+          <span>●</span> canlı grafik &amp; yaklaşma
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="graphCanvas" width="600" height="260"></canvas>
+      </div>
+      <div class="hint-row">
+        <div class="hint-pill" id="levelLabel">Seviye 1 · Sürekli fonksiyon</div>
+        <div id="microHint">Noktalar x→a iken f(x)'in nereye gittiğini gösteriyor.</div>
+      </div>
+    </section>
+
+    <!-- SAĞ: Soru & seçenekler -->
+    <section class="card">
+      <div class="question-area">
+        <div class="question-main">
+          <div class="question-label">Soru</div>
+          <div class="function-label" id="functionLabel">
+            f(x) = 2x + 1
+          </div>
+          <div class="limit-label" id="limitPrompt">
+            x → 2 iken f(x) hangi değere yaklaşıyor?
+          </div>
+          <div class="target-badge">
+            🎯 Limit sezgisi: Grafik → Yaklaşma → Tahmin
+          </div>
+
+          <div class="choices" id="choicesContainer">
+            <!-- JS ile doldurulacak -->
+          </div>
+
+          <div class="feedback" id="feedback"></div>
+          <div class="explanation" id="explanation"></div>
+        </div>
+
+        <div>
+          <div class="controls">
+            <button class="btn" id="replayBtn">↺ Yeniden oynat</button>
+            <button class="btn primary" id="nextBtn">▶ Sonraki soru</button>
+          </div>
+          <div class="stats">
+            <span>Doğru seri: <strong id="streak">0</strong></span>
+            <span>Toplam doğru: <strong id="totalCorrect">0</strong></span>
+            <span>Toplam soru: <strong id="totalAsked">0</strong></span>
+          </div>
+          <div class="tiny-note">
+            İpucu: Seçmeden önce noktaların yaklaştığı <strong>y</strong> değerini izle.
+            Bazı sorularda fonksiyon tanımsız olsa da limit var olabilir.
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  // --------- Level Definitions ----------
+  const levels = [
+    {
+      id: 1,
+      title: "Sürekli fonksiyon",
+      fnLabel: "f(x) = 2x + 1",
+      aLabel: "2",
+      a: 2,
+      type: "finite",
+      xMin: -2,
+      xMax: 6,
+      yMin: -2,
+      yMax: 8,
+      fn: x => 2 * x + 1,
+      limit: 5,
+      options: [3, 5, 7],
+      explanation:
+        "Polinomlar her noktada süreklidir. x → 2 iken doğrudan yerine yazarız: f(2) = 5, limit de 5'tir.",
+      microHint:
+        "Sürekli fonksiyon: Noktalar hangi y değerinin etrafında toplanıyor, ona bak."
+    },
+    {
+      id: 2,
+      title: "Delik ama limit var",
+      fnLabel: "f(x) = (x² - 1) / (x - 1), x ≠ 1",
+      aLabel: "1",
+      a: 1,
+      type: "finite",
+      xMin: -1,
+      xMax: 3,
+      yMin: -1,
+      yMax: 5,
+      fn: x => (x === 1 ? NaN : (x * x - 1) / (x - 1)),
+      limit: 2,
+      options: [1, 2, 0],
+      explanation:
+        "(x² - 1)/(x - 1) sadeleşince x + 1 olur. x → 1 iken x + 1 → 2. Nokta 1'de delik olsa da limit 2'dir.",
+      microHint:
+        "Delik seni korkutmasın. Noktalar nereye yaklaşıyor, onu oku."
+    },
+    {
+      id: 3,
+      title: "Sağ ve sol farklı",
+      fnLabel: "f(x) = 1 (x < 0), 3 (x > 0)",
+      aLabel: "0",
+      a: 0,
+      type: "piecewise",
+      xMin: -3,
+      xMax: 3,
+      yMin: 0,
+      yMax: 4,
+      fnLeft: x => 1,
+      fnRight: x => 3,
+      limit: null, // no limit
+      options: ["Limit yok", 1, 3],
+      explanation:
+        "x → 0⁻ iken f(x) = 1, x → 0⁺ iken f(x) = 3. Sağ ve sol limitler eşit değil, bu yüzden limit yok.",
+      microHint:
+        "İki renkli nokta farklı y değerlerine gidiyorsa: Limit yok."
+    },
+    {
+      id: 4,
+      title: "Sonsuzda limit",
+      fnLabel: "f(x) = (3x² + x)/(2x² + 1)",
+      aLabel: "∞",
+      a: Infinity,
+      type: "infinity",
+      xMin: 0,
+      xMax: 8,
+      yMin: 0,
+      yMax: 2.5,
+      fn: x => (3 * x * x + x) / (2 * x * x + 1),
+      limit: 1.5,
+      options: [1.5, 3, 0],
+      explanation:
+        "x çok büyürken baskın terimler oranı belirler: (3x²)/(2x²) = 3/2. Grafik bu değere doğru yataylaşır.",
+      microHint:
+        "x büyürken çizgi hangi yatay değere doğru gitmiş gibi görünüyor, ona odaklan."
+    }
+  ];
+
+  // --------- State ----------
+  let currentIndex = 0;
+  let currentLevel = levels[0];
+  let answered = false;
+  let streak = 0;
+  let totalCorrect = 0;
+  let totalAsked = 0;
+  let animationId = null;
+
+  // --------- DOM ----------
+  const canvas = document.getElementById("graphCanvas");
+  const ctx = canvas.getContext("2d");
+  const functionLabel = document.getElementById("functionLabel");
+  const limitPrompt = document.getElementById("limitPrompt");
+  const choicesContainer = document.getElementById("choicesContainer");
+  const feedbackEl = document.getElementById("feedback");
+  const explanationEl = document.getElementById("explanation");
+  const levelLabel = document.getElementById("levelLabel");
+  const microHintEl = document.getElementById("microHint");
+  const replayBtn = document.getElementById("replayBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const streakEl = document.getElementById("streak");
+  const totalCorrectEl = document.getElementById("totalCorrect");
+  const totalAskedEl = document.getElementById("totalAsked");
+
+  // --------- Utility: Coordinate Transform ----------
+  function worldToCanvas(x, y, lvl) {
+    const { xMin, xMax, yMin, yMax } = lvl;
+    const margin = 24;
+    const w = canvas.width - 2 * margin;
+    const h = canvas.height - 2 * margin;
+    const clampedX = Math.max(xMin, Math.min(xMax, x));
+    const clampedY = Math.max(yMin, Math.min(yMax, y));
+    const nx = (clampedX - xMin) / (xMax - xMin || 1);
+    const ny = (clampedY - yMin) / (yMax - yMin || 1);
+    const cx = margin + nx * w;
+    const cy = margin + (1 - ny) * h;
+    return { x: cx, y: cy };
+  }
+
+  function clearAnimation() {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+  }
+
+  // --------- Draw Axes & Function ----------
+  function drawBase(lvl) {
+    const { xMin, xMax, yMin, yMax } = lvl;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // background gradient
+    const g = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    g.addColorStop(0, "rgba(15,23,42,1)");
+    g.addColorStop(1, "rgba(2,6,23,1)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.strokeStyle = "rgba(148,163,253,0.18)";
+    ctx.lineWidth = 0.5;
+
+    // grid
+    for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i++) {
+      const p = worldToCanvas(i, yMin, lvl);
+      ctx.beginPath();
+      ctx.moveTo(p.x, 8);
+      ctx.lineTo(p.x, canvas.height - 8);
+      ctx.stroke();
+    }
+    for (let j = Math.ceil(yMin); j <= Math.floor(yMax); j++) {
+      const p = worldToCanvas(xMin, j, lvl);
+      ctx.beginPath();
+      ctx.moveTo(8, p.y);
+      ctx.lineTo(canvas.width - 8, p.y);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // axes
+    ctx.save();
+    ctx.strokeStyle = "rgba(148,163,253,0.7)";
+    ctx.lineWidth = 0.8;
+
+    // x-axis
+    if (yMin < 0 && yMax > 0) {
+      const p1 = worldToCanvas(xMin, 0, lvl);
+      const p2 = worldToCanvas(xMax, 0, lvl);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+
+    // y-axis
+    if (xMin < 0 && xMax > 0) {
+      const p1 = worldToCanvas(0, yMin, lvl);
+      const p2 = worldToCanvas(0, yMax, lvl);
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // function curve
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(56,189,248,0.95)";
+    ctx.beginPath();
+
+    const steps = 260;
+    let first = true;
+
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = xMin + t * (xMax - xMin);
+      let y;
+
+      if (lvl.type === "piecewise") {
+        if (x < lvl.a) y = lvl.fnLeft(x);
+        else if (x > lvl.a) y = lvl.fnRight(x);
+        else y = NaN;
+      } else {
+        y = lvl.fn(x);
+      }
+
+      if (Number.isFinite(y)) {
+        const { x: cx, y: cy } = worldToCanvas(x, y, lvl);
+        if (first) {
+          ctx.moveTo(cx, cy);
+          first = false;
+        } else {
+          ctx.lineTo(cx, cy);
+        }
+      } else {
+        first = true;
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // "delik" veya özel nokta göster
+    if (lvl.id === 2) {
+      const holeY = lvl.limit;
+      const hole = worldToCanvas(lvl.a, holeY, lvl);
+      ctx.save();
+      ctx.strokeStyle = "rgba(248,250,252,0.95)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(hole.x, hole.y, 5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (lvl.type === "piecewise") {
+      const leftY = lvl.fnLeft(lvl.a - 0.02);
+      const rightY = lvl.fnRight(lvl.a + 0.02);
+
+      const leftP = worldToCanvas(lvl.a, leftY, lvl);
+      const rightP = worldToCanvas(lvl.a, rightY, lvl);
+
+      ctx.save();
+      ctx.fillStyle = "rgba(56,189,248,0.95)";
+      ctx.beginPath();
+      ctx.arc(leftP.x, leftP.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(248,250,252,0.96)";
+      ctx.beginPath();
+      ctx.arc(rightP.x, rightP.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // --------- Animation ----------
+  function animateApproach(lvl) {
+    clearAnimation();
+    drawBase(lvl);
+
+    const duration = 1300;
+    const start = performance.now();
+
+    function frame(now) {
+      const t = Math.min(1, (now - start) / duration);
+
+      drawBase(lvl);
+
+      if (lvl.type === "infinity") {
+        // single dot going right, show approach to horizontal asymptote
+        const x = lvl.xMin + t * (lvl.xMax - lvl.xMin);
+        const y = lvl.fn(x);
+        if (Number.isFinite(y)) {
+          const p = worldToCanvas(x, y, lvl);
+          ctx.save();
+          ctx.fillStyle = "rgba(56,189,248,1)";
+          ctx.shadowColor = "rgba(56,189,248,0.7)";
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // target line hint
+        if (lvl.limit != null) {
+          const yLine = worldToCanvas(0, lvl.limit, lvl).y;
+          ctx.save();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = "rgba(148,163,253," + (0.25 + 0.45 * t) + ")";
+          ctx.beginPath();
+          ctx.moveTo(26, yLine);
+          ctx.lineTo(canvas.width - 26, yLine);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+      } else {
+        // two-sided approach
+        const range = (lvl.xMax - lvl.xMin) * 0.35;
+        const leftX = lvl.a - range * (1 - t);
+        const rightX = lvl.a + range * (1 - t * 1.02);
+
+        let yL, yR;
+        if (lvl.type === "piecewise") {
+          yL = lvl.fnLeft(leftX);
+          yR = lvl.fnRight(rightX);
+        } else {
+          yL = lvl.fn(leftX);
+          yR = lvl.fn(rightX);
+        }
+
+        if (Number.isFinite(yL)) {
+          const pL = worldToCanvas(leftX, yL, lvl);
+          ctx.save();
+          ctx.fillStyle = "rgba(56,189,248,0.98)";
+          ctx.shadowColor = "rgba(56,189,248,0.9)";
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(pL.x, pL.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (Number.isFinite(yR)) {
+          const pR = worldToCanvas(rightX, yR, lvl);
+          ctx.save();
+          ctx.fillStyle = "rgba(251,191,36,0.96)";
+          ctx.shadowColor = "rgba(251,191,36,0.9)";
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(pR.x, pR.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // subtle target marker if limit exists
+        if (lvl.limit != null) {
+          const target = worldToCanvas(lvl.a, lvl.limit, lvl);
+          ctx.save();
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = "rgba(148,163,253," + (0.18 + 0.4 * t) + ")";
+          ctx.beginPath();
+          ctx.arc(target.x, target.y, 7, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      if (t < 1) {
+        animationId = requestAnimationFrame(frame);
+      }
+    }
+
+    animationId = requestAnimationFrame(frame);
+  }
+
+  // --------- UI Setup ----------
+  function renderLevel(lvl) {
+    currentLevel = lvl;
+    answered = false;
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+    explanationEl.textContent = "";
+    levelLabel.textContent = `Seviye ${lvl.id} · ${lvl.title}`;
+    microHintEl.textContent = lvl.microHint || "";
+
+    functionLabel.textContent = lvl.fnLabel;
+    limitPrompt.textContent =
+      lvl.a === Infinity
+        ? "x → ∞ iken f(x) hangi değere yaklaşıyor?"
+        : `x → ${lvl.aLabel} iken f(x) hangi değere yaklaşıyor?`;
+
+    // render choices
+    choicesContainer.innerHTML = "";
+    lvl.options.forEach((opt, index) => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "label";
+      labelSpan.textContent =
+        typeof opt === "string" ? opt : (Number.isInteger(opt) ? opt.toString() : opt.toString().replace(".", ","));
+      const keySpan = document.createElement("span");
+      keySpan.className = "key";
+      keySpan.textContent = ["A", "B", "C", "D"][index] || "";
+      btn.appendChild(labelSpan);
+      btn.appendChild(keySpan);
+
+      btn.addEventListener("click", () => handleChoice(opt, btn));
+      choicesContainer.appendChild(btn);
+    });
+
+    // draw + animate
+    drawBase(lvl);
+    animateApproach(lvl);
+  }
+
+  function handleChoice(selected, btnEl) {
+    if (answered) return;
+    answered = true;
+    totalAsked++;
+    let isCorrect = false;
+
+    if (currentLevel.limit === null) {
+      isCorrect = (typeof selected === "string") && selected.toLowerCase().includes("limit yok");
+    } else {
+      const correct = currentLevel.limit;
+      if (typeof selected === "number") {
+        isCorrect = Math.abs(selected - correct) < 1e-6;
+      } else {
+        isCorrect = false;
+      }
+    }
+
+    const allBtns = choicesContainer.querySelectorAll(".choice-btn");
+    allBtns.forEach(b => b.disabled = true);
+
+    if (isCorrect) {
+      btnEl.classList.add("correct");
+      feedbackEl.textContent = "Doğru 🎯 Yaklaşma davranışını doğru okudun.";
+      feedbackEl.classList.add("ok");
+      totalCorrect++;
+      streak++;
+    } else {
+      btnEl.classList.add("wrong");
+      feedbackEl.textContent = "Yanlış ❌ Hadi yaklaşma davranışını birlikte okuyalım.";
+      feedbackEl.classList.add("bad");
+      streak = 0;
+    }
+
+    // mark correct choice
+    allBtns.forEach(b => {
+      const label = b.querySelector(".label").textContent.replace(",", ".");
+      const val = b.textContent.includes("Limit yok")
+        ? "nolimit"
+        : parseFloat(label);
+
+      if (currentLevel.limit === null && b.textContent.includes("Limit yok")) {
+        b.classList.add("correct");
+      } else if (
+        currentLevel.limit !== null &&
+        !isNaN(val) &&
+        Math.abs(val - currentLevel.limit) < 1e-6
+      ) {
+        b.classList.add("correct");
+      }
+    });
+
+    explanationEl.textContent = currentLevel.explanation || "";
+    totalCorrectEl.textContent = totalCorrect;
+    totalAskedEl.textContent = totalAsked;
+    streakEl.textContent = streak.toString();
+
+    // küçük highlight
+    clearAnimation();
+    drawBase(currentLevel);
+    if (currentLevel.limit !== null && currentLevel.limit !== undefined) {
+      const target = worldToCanvas(
+        currentLevel.a === Infinity ? currentLevel.xMax : currentLevel.a,
+        currentLevel.limit,
+        currentLevel
+      );
+      ctx.save();
+      ctx.fillStyle = "rgba(34,197,94,0.95)";
+      ctx.shadowColor = "rgba(34,197,94,0.95)";
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function nextLevel() {
+    currentIndex = (currentIndex + 1) % levels.length;
+    renderLevel(levels[currentIndex]);
+  }
+
+  // --------- Events ----------
+  replayBtn.addEventListener("click", () => {
+    answered = false;
+    feedbackEl.textContent = "";
+    feedbackEl.className = "feedback";
+    explanationEl.textContent = "";
+    const allBtns = choicesContainer.querySelectorAll(".choice-btn");
+    allBtns.forEach(b => {
+      b.disabled = false;
+      b.classList.remove("correct", "wrong");
+    });
+    animateApproach(currentLevel);
+  });
+
+  nextBtn.addEventListener("click", () => {
+    nextLevel();
+  });
+
+  // --------- Init ----------
+  renderLevel(currentLevel);
+</script>
+</body>
+</html>
